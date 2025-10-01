@@ -1,0 +1,513 @@
+# 🚀 Car Showroom Backend API Documentation
+
+## 📋 Overview
+- Base URL: http://localhost:5000
+- Database: MongoDB (carshowroom_new)
+- Authentication: JWT Bearer Token
+- Tech Stack: Express.js, MongoDB, Mongoose
+
+## 🔗 Base Endpoints Structure
+| Module  | Base Route    | Description                  |
+|---------|---------------|------------------------------|
+| Health  | /api/health   | System health check          |
+| Auth    | /api/auth     | Authentication & user mgmt   |
+| Banners | /api/banners  | Website banner management    |
+| Brands  | /api/brands   | Car brand management         |
+| Cars    | /api/cars     | Car inventory management     |
+| Rentals | /api/rentals  | Car rental management        |
+
+## 🔐 Authentication Endpoints (/api/auth)
+
+### Admin Authentication
+| Method | Endpoint           | Description                    | Access    |
+|--------|--------------------|--------------------------------|-----------|
+| POST   | /admin/login       | Admin login                    | Public    |
+| GET    | /me                | Get current user profile       | Protected |
+| POST   | /admin/create      | Create admin user (setup)      | Public    |
+| PUT    | /profile           | Update user profile            | Protected |
+| PUT    | /change-password   | Change password                | Protected |
+
+### Login Example:
+```json
+POST /api/auth/admin/login
+{
+  "email": "admin@carshowroom.com",
+  "password": "admin123"
+}
+
+Response:
+{
+  "success": true,
+  "message": "Login successful",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": "...",
+    "name": "Admin",
+    "email": "admin@carshowroom.com",
+    "role": "admin"
+  }
+}
+```
+
+## 🖼️ Banner Endpoints (/api/banners)
+
+| Method | Endpoint     | Description                | Access |
+|--------|--------------|----------------------------|--------|
+| GET    | /            | Get all banners            | Public |
+| GET    | /:id         | Get single banner          | Public |
+| POST   | /            | Create new banner          | Admin  |
+| PUT    | /:id         | Update banner              | Admin  |
+| DELETE | /:id         | Delete banner              | Admin  |
+| PATCH  | /:id/status  | Update banner status       | Admin  |
+| PATCH  | /reorder     | Reorder banners            | Admin  |
+
+### Query Parameters for GET /banners:
+- active=true/false - Filter by active status
+- page=1 - Pagination
+- limit=10 - Items per page
+- sort=createdAt/-createdAt - Sorting
+
+### Banner Schema:
+```json
+{
+  "title": "string",
+  "subtitle": "string", 
+  "imageUrl": "string",
+  "buttonText": "string",
+  "buttonLink": "string",
+  "isActive": "boolean",
+  "order": "number"
+}
+```
+
+## 🏷️ Brand Endpoints (/api/brands)
+
+| Method | Endpoint               | Description                | Access |
+|--------|------------------------|----------------------------|--------|
+| GET    | /                      | Get all brands             | Public |
+| GET    | /:id                   | Get single brand           | Public |
+| GET    | /name/:name            | Get brand by name          | Public |
+| POST   | /                      | Create new brand           | Admin  |
+| PUT    | /:id                   | Update brand               | Admin  |
+| DELETE | /:id                   | Delete brand               | Admin  |
+| PATCH  | /:id/status            | Update brand status        | Admin  |
+| PATCH  | /:id/update-car-count  | Update car count           | Admin  |
+
+### Query Parameters for GET /brands:
+- active=true/false - Filter by active status
+- search=keyword - Search in name/description
+- page=1 - Pagination
+- limit=10 - Items per page
+
+### Brand Schema:
+```json
+{
+  "name": "string",
+  "description": "string",
+  "logoUrl": "string",
+  "country": "string", 
+  "foundedYear": "number",
+  "website": "string",
+  "isActive": "boolean",
+  "carCount": "number"
+}
+```
+
+## 🚗 Car Endpoints (/api/cars) ✅ UPDATED
+
+| Method | Endpoint         | Description                | Access |
+|--------|------------------|----------------------------|--------|
+| GET    | /                | Get all cars with filtering| Public |
+| GET    | /:id             | Get single car             | Public |
+| GET    | /featured/list   | Get featured cars          | Public |
+| GET    | /stats/overview  | Get car statistics         | Admin  |
+| POST   | /                | Create new car             | Admin  |
+| PUT    | /:id             | Update car                 | Admin  |
+| DELETE | /:id             | Delete car                 | Admin  |
+| PATCH  | /:id/status      | Update car availability    | Admin  |
+| PATCH  | /:id/featured    | Toggle featured status     | Admin  |
+
+### ⚠️ REMOVED Endpoints:
+- ❌ GET /api/cars/rental/list (Rental cars endpoint removed)
+
+### Updated Query Parameters for GET /cars:
+**Filtering:**
+- brand=brandId - Filter by brand
+- category=Sedan/SUV/Hatchback - Filter by category
+- fuelType=Petrol/Diesel/Electric - Filter by fuel type
+- transmission=Manual/Automatic - Filter by transmission
+- minPrice=10000&maxPrice=50000 - Price range
+- status=available/sold - Availability status
+- featured=true/false - Featured cars
+- ❌ isRental - REMOVED
+
+**Search & Sort:**
+- search=keyword - Search in name, model, description
+- sort=price/-price - Sort by price (asc/desc)
+- sort=year/-year - Sort by year
+- sort=createdAt/-createdAt - Sort by date
+
+**Pagination:**
+- page=1 - Page number
+- limit=12 - Items per page
+
+### Car Schema:
+```json
+{
+  "name": "string",
+  "brand": "ObjectId (ref: Brand)",
+  "model": "string",
+  "year": "number",
+  "price": "number",
+  "category": "string",
+  "fuelType": "string",
+  "transmission": "string",
+  "seatingCapacity": "number",
+  "mileage": "number",
+  "images": ["string"],
+  "features": ["string"],
+  "description": "string",
+  "isAvailable": "boolean",
+  "isFeatured": "boolean",
+  "specifications": {
+    "engine": "string",
+    "power": "string", 
+    "torque": "string",
+    "topSpeed": "string",
+    "acceleration": "string"
+  }
+}
+```
+
+### Updated Car Statistics (GET /stats/overview):
+```json
+{
+  "success": true,
+  "data": {
+    "overview": {
+      "totalCars": "number",
+      "availableCars": "number", 
+      "soldCars": "number",
+      "featuredCars": "number"
+      // ❌ "rentalCars" - REMOVED
+    },
+    "carsByCategory": [...],
+    "carsByBrand": [...]
+  }
+}
+```
+
+## 🚘 Rental Endpoints (/api/rentals) ✅ UPDATED
+
+| Method | Endpoint         | Description                | Access |
+|--------|------------------|----------------------------|--------|
+| GET    | /                | Get all rentals            | Public ✅|
+| GET    | /:id             | Get single rental          | Admin  |
+| GET    | /stats/overview  | Get rental statistics      | Admin  |
+| POST   | /                | Create rental (admin)      | Admin  |
+| PUT    | /:id             | Update rental              | Admin  |
+| PATCH  | /:id/status      | Update rental status       | Admin  |
+| DELETE | /:id             | Delete rental              | Admin  |
+
+### ⚠️ REMOVED Endpoints:
+- ❌ POST /api/rentals/request (Public rental request removed)
+- ❌ PATCH /api/rentals/:id/payment (Payment status update removed)
+- ❌ POST /api/rentals/check-availability (Availability check removed)
+
+### Updated Query Parameters for GET /rentals:
+- status=pending/confirmed/cancelled/completed - Filter by status
+- car=carId - Filter by car
+- startDate=YYYY-MM-DD - Filter by start date
+- endDate=YYYY-MM-DD - Filter by end date
+- customer=name - Search by customer name
+- page=1 - Pagination
+- limit=10 - Items per page
+- ❌ paymentStatus - REMOVED
+
+### Rental Schema:
+```json
+{
+  "car": "ObjectId (ref: Car)",
+  "customerName": "string",
+  "customerEmail": "string", 
+  "customerPhone": "string",
+  "startDate": "Date",
+  "endDate": "Date",
+  "totalCost": "number",
+  "status": "pending/confirmed/cancelled/completed",
+  "message": "string",
+  "notes": "string"
+  // ❌ "paymentStatus" - No longer used
+}
+```
+
+## 📊 System Endpoints
+
+### Health Check
+```
+GET /api/health
+Response: 
+{
+  "status": "OK",
+  "message": "Car Showroom API is running", 
+  "timestamp": "2024-01-01T00:00:00.000Z"
+}
+```
+
+### Root Endpoint
+```
+GET /
+Response: API documentation with all endpoints
+```
+
+## 🔒 Authentication & Authorization
+
+### JWT Token Usage
+```
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+### Access Levels:
+- **Public**: No authentication required
+- **Protected**: Requires valid JWT token
+- **Admin**: Requires admin role + valid JWT token
+
+## 🌐 CORS Configuration
+**Allowed Origins:**
+- http://localhost:5173 (Frontend dev)
+- http://localhost:5174 (Frontend production)
+- http://localhost:5175 (Admin dashboard)
+- http://localhost:3000 (Additional frontend)
+
+**Allowed Methods:** GET, POST, PUT, DELETE, OPTIONS, PATCH
+**Allowed Headers:** Content-Type, Authorization
+
+## 📁 Complete Updated API Endpoint List
+
+### 🔓 Public Endpoints (No Auth Required)
+```
+GET  /api/health                     # Health check
+GET  /                              # API info
+GET  /api/banners                   # Get banners
+GET  /api/banners/:id               # Get single banner
+GET  /api/brands                    # Get brands
+GET  /api/brands/:id                # Get single brand
+GET  /api/brands/name/:name         # Get brand by name
+GET  /api/cars                      # Get cars (with filters)
+GET  /api/cars/:id                  # Get single car
+GET  /api/cars/featured/list        # Get featured cars
+GET  /api/rentals                   # Get all rentals ✅ PUBLIC
+POST /api/auth/admin/login          # Admin login
+POST /api/auth/admin/create         # Create admin
+```
+
+### 🔐 Protected Endpoints (Auth Required)
+```
+GET  /api/auth/me                   # Get profile
+PUT  /api/auth/profile              # Update profile
+PUT  /api/auth/change-password      # Change password
+```
+
+### 👑 Admin Only Endpoints
+```
+# Banners Management
+POST   /api/banners                 # Create banner
+PUT    /api/banners/:id             # Update banner
+DELETE /api/banners/:id             # Delete banner
+PATCH  /api/banners/:id/status      # Update banner status
+PATCH  /api/banners/reorder         # Reorder banners
+
+# Brands Management
+POST   /api/brands                  # Create brand
+PUT    /api/brands/:id              # Update brand
+DELETE /api/brands/:id              # Delete brand
+PATCH  /api/brands/:id/status       # Update brand status
+PATCH  /api/brands/:id/update-car-count # Update car count
+
+# Cars Management
+POST   /api/cars                    # Create car
+PUT    /api/cars/:id                # Update car
+DELETE /api/cars/:id                # Delete car
+PATCH  /api/cars/:id/status         # Update car status
+PATCH  /api/cars/:id/featured       # Toggle featured
+GET    /api/cars/stats/overview     # Car statistics ✅ UPDATED
+
+# Rentals Management
+GET    /api/rentals/:id             # Get single rental
+GET    /api/rentals/stats/overview  # Rental statistics
+POST   /api/rentals                 # Create rental (admin)
+PUT    /api/rentals/:id             # Update rental
+PATCH  /api/rentals/:id/status      # Update rental status
+DELETE /api/rentals/:id             # Delete rental
+```
+
+## 🚀 Quick Start Examples
+
+### Public API Calls (No Auth)
+```bash
+# Get all cars (no rental filtering)
+curl http://localhost:5000/api/cars
+
+# Get featured cars
+curl http://localhost:5000/api/cars/featured/list
+
+# Get all rentals (Now Public)
+curl http://localhost:5000/api/rentals
+
+# Filter cars by category (no rental filter)
+curl "http://localhost:5000/api/cars?category=SUV&status=available"
+
+# Get all brands
+curl http://localhost:5000/api/brands
+
+# Get all banners
+curl http://localhost:5000/api/banners?active=true
+```
+
+### Admin API Calls (Auth Required)
+```bash
+# Login first
+curl -X POST http://localhost:5000/api/auth/admin/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@carshowroom.com","password":"admin123"}'
+
+# Create car
+curl -X POST http://localhost:5000/api/cars \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"New Car","brand":"brand_id","price":25000}'
+
+# Create rental (admin only)
+curl -X POST http://localhost:5000/api/rentals \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{"car":"car_id","customerName":"John","customerEmail":"john@email.com","customerPhone":"123456789","startDate":"2024-01-15","endDate":"2024-01-20"}'
+
+# Get car statistics (updated - no rental cars)
+curl -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  http://localhost:5000/api/cars/stats/overview
+
+# Create banner
+curl -X POST http://localhost:5000/api/banners \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{"title":"New Banner","subtitle":"Description","imageUrl":"https://example.com/image.jpg","isActive":true}'
+
+# Create brand
+curl -X POST http://localhost:5000/api/brands \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"New Brand","description":"Brand description","logoUrl":"https://example.com/logo.png"}'
+```
+
+## 🔧 Database Models Overview
+
+| Model   | Purpose              | Key Features                        |
+|---------|----------------------|-------------------------------------|
+| User    | Admin authentication | Role-based access, password hashing|
+| Banner  | Homepage banners     | Image URLs, ordering, status       |
+| Brand   | Car manufacturers    | Logo, details, car count tracking  |
+| Car     | Vehicle inventory    | Full specs, images, featured status|
+| Rental  | Rental management    | Status tracking, customer details  |
+
+## 🎯 Recent Updates Summary
+- ✅ GET /api/rentals is PUBLIC (previously admin-only)
+- ❌ REMOVED rental-related endpoints from Cars API
+- ❌ REMOVED request and payment endpoints from Rentals API
+- ✅ SIMPLIFIED filtering and statistics
+- ✅ CORS configured for all environments
+
+### 🗑️ Removed Features:
+- Cars: isRental filtering, /rental/list endpoint, rental statistics
+- Rentals: /request endpoint, /payment endpoint, /check-availability endpoint, payment status filtering
+
+## 🔑 Default Admin Credentials:
+- Email: admin@carshowroom.com
+- Password: admin123
+
+## 🚀 Getting Started
+1. Install dependencies: npm install
+2. Set environment variables: Copy .env.example to .env
+3. Seed database: npm run seed
+4. Start server: npm run dev
+5. Access API: http://localhost:5000
+
+This simplified API focuses on core car showroom functionality without complex rental-specific features, making it easier to manage and use.
+
+## 📝 Environment Variables (.env)
+```
+NODE_ENV=development
+PORT=5000
+MONGODB_URI=mongodb://localhost:27017/carshowroom_new
+JWT_SECRET=your_super_secret_jwt_key_here_change_in_production
+JWT_EXPIRE=30d
+
+# Cloudinary (for image uploads)
+CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
+CLOUDINARY_API_KEY=your_cloudinary_api_key
+CLOUDINARY_API_SECRET=your_cloudinary_api_secret
+
+# CORS
+FRONTEND_URL=http://localhost:5173
+ADMIN_URL=http://localhost:5174
+
+# Admin credentials
+ADMIN_EMAIL=admin@carshowroom.com
+ADMIN_PASSWORD=admin123
+```
+
+## 📦 Dependencies
+```json
+{
+  "express": "^4.18.2",
+  "mongoose": "^7.5.0",
+  "cors": "^2.8.5",
+  "dotenv": "^16.3.1",
+  "bcryptjs": "^2.4.3",
+  "jsonwebtoken": "^9.0.2",
+  "multer": "^1.4.5-lts.1",
+  "cloudinary": "^1.41.0",
+  "express-validator": "^7.0.1",
+  "morgan": "^1.10.0",
+  "helmet": "^7.0.0"
+}
+```
+
+## 🎭 API Response Format
+All API responses follow this standard format:
+
+### Success Response:
+```json
+{
+  "success": true,
+  "message": "Operation successful",
+  "data": { ... },
+  "count": 10,          // For list endpoints
+  "total": 100,         // For paginated endpoints
+  "totalPages": 10,     // For paginated endpoints
+  "currentPage": 1      // For paginated endpoints
+}
+```
+
+### Error Response:
+```json
+{
+  "success": false,
+  "message": "Error description",
+  "error": "Detailed error info", // Only in development
+  "errors": [ ... ]               // For validation errors
+}
+```
+
+## 📊 HTTP Status Codes Used
+- 200: OK - Request successful
+- 201: Created - Resource created successfull    rm -rf ~/.config/nvim/.gity
+- 400: Bad Request - Invalid request data
+- 401: Unauthorized - Authentication required
+- 403: Forbidden - Insufficient permissions
+- 404: Not Found - Resource not found
+- 500: Internal Server Error - Server error
+
+---
+Generated on: September 30, 2025
+API Version: 1.0.0
